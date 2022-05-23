@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -73,10 +72,11 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 		return query, args
 	}
 
+	// As we only want the filter to show when asking for visible only results we will only want to check visible = true.
+	// As when visible = false we show all results, regardless of if they're visible or not.
 	if filter.OnlyVisible {
 		clauses = append(clauses, "visible = true")
 	}
-	fmt.Println(filter.String())
 
 	if len(filter.MeetingIds) > 0 {
 		clauses = append(clauses, "meeting_id IN ("+strings.Repeat("?,", len(filter.MeetingIds)-1)+"?)")

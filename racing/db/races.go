@@ -74,6 +74,8 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 		return query, args
 	}
 
+	// As we only want the filter to show when asking for visible only results we will only want to check visible = true.
+	// As when visible = false we show all results, regardless of if they're visible or not.
 	if filter.OnlyVisible {
 		clauses = append(clauses, "visible = true")
 	}
@@ -90,7 +92,7 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 		query += " WHERE " + strings.Join(clauses, " AND ")
 	}
 
-	if filter.OrderBy != nil {
+	if filter.OrderBy != nil && len(filter.OrderBy.Fields) != 0 {
 		query += fmt.Sprintf(" ORDER BY %s %s", strings.Join(filter.OrderBy.Fields, ", "), racing.OrderBy_Direction_name[int32(*filter.OrderBy.Direction.Enum())])
 	}
 

@@ -105,7 +105,11 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 	}
 
 	if filter.OrderBy != nil && len(filter.OrderBy.Fields) != 0 {
-		query += fmt.Sprintf(" ORDER BY %s %s", strings.Join(filter.OrderBy.Fields, ", "), racing.OrderBy_Direction_name[int32(*filter.OrderBy.Direction.Enum())])
+		query += fmt.Sprintf(
+			" ORDER BY %s %s",
+			strings.Join(filter.OrderBy.Fields, ", "),
+			racing.OrderBy_Direction_name[int32(*filter.OrderBy.Direction.Enum())],
+		)
 	}
 
 	return query, args
@@ -121,8 +125,6 @@ func (m *racesRepo) scanRace(
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-
-		return nil, err
 	}
 
 	ts, err := ptypes.TimestampProto(advertisedStart)

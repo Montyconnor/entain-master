@@ -76,7 +76,6 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 	if filter.OnlyVisible {
 		clauses = append(clauses, "visible = true")
 	}
-	fmt.Println(filter.String())
 
 	if len(filter.MeetingIds) > 0 {
 		clauses = append(clauses, "meeting_id IN ("+strings.Repeat("?,", len(filter.MeetingIds)-1)+"?)")
@@ -88,6 +87,10 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 
 	if len(clauses) != 0 {
 		query += " WHERE " + strings.Join(clauses, " AND ")
+	}
+
+	if filter.OrderBy != nil {
+		query += fmt.Sprintf(" ORDER BY %s %s", strings.Join(filter.OrderBy.Fields, ", "), racing.OrderBy_Direction_name[int32(*filter.OrderBy.Direction.Enum())])
 	}
 
 	return query, args

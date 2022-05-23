@@ -25,9 +25,21 @@ message ListRacesResponse {
 message ListRacesRequestFilter {
   repeated int64 meeting_ids = 1;
   bool only_visible = 2;
+  OrderBy order_by = 3;
 }
 
 /* Resources */
+
+message OrderBy {
+  enum Direction {
+    ASC = 0;
+    DESC = 1;
+  }
+  // Field that the results should be sorted by
+  repeated string fields = 1;
+  // Direction to order in. i.e asc/desc
+  Direction direction = 2;
+}
 
 // A race resource.
 message Race {

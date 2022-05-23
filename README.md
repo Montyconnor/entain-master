@@ -147,3 +147,13 @@ curl -X "POST" "http://localhost:8000/v1/list-sports" \
   "filter": {"meetingID":["1", "22"], "onlyVisible":true}
 }'
 ```
+
+4. Order by any given field either ascending (default) or descending
+```bash
+curl -X "POST" "http://localhost:8000/v1/list-sports" \
+     -H 'Content-Type: application/json' \
+     -d $'{
+  "filter": {"orderBy":{"fields": ["id", "name"], "Direction": "DESC"}}
+}'
+```
+Same as with 3., this call can be combined with others into one filter to further refine the query.

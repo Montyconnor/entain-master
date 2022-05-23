@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	_ "github.com/mattn/go-sqlite3"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"git.neds.sh/matty/entain/racing/proto/racing"
 )
@@ -123,7 +122,8 @@ func (m *racesRepo) scanRaces(
 
 		race.AdvertisedStartTime = ts
 
-		if timestamppb.Now().Seconds >= ts.Seconds {
+		// if the advertised start time is after the current time then we flag it as OPEN
+		if ts.AsTime().After(time.Now()) {
 			race.Status = racing.Race_OPEN
 		}
 

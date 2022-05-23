@@ -12,7 +12,7 @@ service Racing {
     option (google.api.http) = { post: "/v1/list-races", body: "*" };
   }
   rpc FetchRace(FetchRaceRequest) returns (FetchRaceResponse) {
-    option (google.api.http) = {get:"/v1/list-race/{id}"};
+    option (google.api.http) = { get: "/v1/list-race/{id}" };
   }
 }
 

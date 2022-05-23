@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -21,6 +22,7 @@ type RacesRepo interface {
 
 	// List will return a list of races.
 	List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error)
+	FetchRace(req *racing.FetchRaceRequest) (*racing.Race, error)
 }
 
 type racesRepo struct {
@@ -61,7 +63,17 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 		return nil, err
 	}
 
-	return r.scanRaces(rows)
+	var races []*racing.Race
+
+	for rows.Next() {
+		race, err := r.scanRace(rows)
+		if err != nil {
+			return nil, err
+		}
+		races = append(races, race)
+	}
+
+	return races, nil
 }
 
 func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}) {
@@ -99,36 +111,61 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 	return query, args
 }
 
-func (m *racesRepo) scanRaces(
+func (m *racesRepo) scanRace(
 	rows *sql.Rows,
-) ([]*racing.Race, error) {
-	var races []*racing.Race
+) (*racing.Race, error) {
+	race := new(racing.Race)
+	var advertisedStart time.Time
 
-	for rows.Next() {
-		var race racing.Race
-		var advertisedStart time.Time
-
-		if err := rows.Scan(&race.Id, &race.MeetingId, &race.Name, &race.Number, &race.Visible, &advertisedStart); err != nil {
-			if err == sql.ErrNoRows {
-				return nil, nil
-			}
-
-			return nil, err
+	if err := rows.Scan(&race.Id, &race.MeetingId, &race.Name, &race.Number, &race.Visible, &advertisedStart); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
 		}
 
-		ts, err := ptypes.TimestampProto(advertisedStart)
-		if err != nil {
-			return nil, err
-		}
-
-		race.AdvertisedStartTime = ts
-
-		if timestamppb.Now().Seconds >= ts.Seconds {
-			race.Status = racing.Race_OPEN
-		}
-
-		races = append(races, &race)
+		return nil, err
 	}
 
-	return races, nil
+	ts, err := ptypes.TimestampProto(advertisedStart)
+	if err != nil {
+		return nil, err
+	}
+
+	race.AdvertisedStartTime = ts
+
+	if timestamppb.Now().Seconds >= ts.Seconds {
+		race.Status = racing.Race_OPEN
+	}
+
+	return race, nil
+}
+
+func (r *racesRepo) FetchRace(req *racing.FetchRaceRequest) (*racing.Race, error) {
+	var (
+		err   error
+		query string
+	)
+
+	query = getRaceQueries()[racesList]
+
+	query, err = r.getRaceByID(query, req)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	rows.Next()
+	return r.scanRace(rows)
+}
+
+func (r *racesRepo) getRaceByID(query string, req *racing.FetchRaceRequest) (string, error) {
+
+	if req == nil || req.Id == "" {
+		return query, errors.New("no id was provided")
+	}
+	query += " WHERE id = " + req.Id
+	return query, nil
 }
